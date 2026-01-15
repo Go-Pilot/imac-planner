@@ -1,0 +1,2048 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IMAC Services - Projekt Planner v2.6</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            padding: 30px;
+        }
+
+        .action-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .filter-bar {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .filter-bar input[type="text"] {
+            padding: 8px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.95em;
+            min-width: 250px;
+        }
+
+        .filter-bar select {
+            padding: 8px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.95em;
+            background: white;
+            cursor: pointer;
+        }
+
+        .filter-bar label {
+            font-weight: 600;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .sort-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 15px;
+            background: #e7f3ff;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+            color: #0066cc;
+        }
+
+        .sort-info.custom {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .today-box {
+            background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);
+        }
+
+        .today-box h3 {
+            margin-bottom: 15px;
+            font-size: 1.4em;
+        }
+
+        .today-items {
+            display: grid;
+            gap: 10px;
+        }
+
+        .today-item {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 12px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .today-item:hover {
+            transform: translateX(5px);
+            background: white;
+        }
+
+        .today-item-info {
+            flex: 1;
+        }
+
+        .today-item-project {
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 3px;
+        }
+
+        .today-item-phase {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .today-item-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .btn-warning:hover {
+            background: #e0a800;
+        }
+
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .btn-info:hover {
+            background: #138496;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 0.85em;
+        }
+
+        .btn-xs {
+            padding: 4px 8px;
+            font-size: 0.75em;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .project-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            cursor: move;
+        }
+
+        .project-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+
+        .project-card.sortable-ghost {
+            opacity: 0.4;
+        }
+
+        .project-card.sortable-drag {
+            transform: rotate(5deg);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+        }
+
+        .project-card.status-green {
+            border-left: 5px solid #28a745;
+        }
+
+        .project-card.status-yellow {
+            border-left: 5px solid #ffc107;
+        }
+
+        .project-card.status-red {
+            border-left: 5px solid #dc3545;
+        }
+
+        .project-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 15px;
+        }
+
+        .project-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .project-type {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .type-neueroffnung-voll {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .type-neueroffnung-popup {
+            background: #cfe2ff;
+            color: #084298;
+        }
+
+        .type-umbau-voll {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .type-umbau-erweiterung {
+            background: #e2e3e5;
+            color: #383d41;
+        }
+
+        .type-umzug {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .type-schliessung {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .project-info {
+            margin: 10px 0;
+            font-size: 0.95em;
+            color: #666;
+        }
+
+        .project-info strong {
+            color: #333;
+        }
+
+        .next-milestone-box {
+            margin-top: 15px;
+            padding: 12px;
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            border-radius: 8px;
+        }
+
+        .next-milestone-box strong {
+            color: #856404;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .next-milestone-box .milestone-name {
+            color: #333;
+            font-weight: 600;
+            font-size: 0.95em;
+        }
+
+        .next-milestone-box .countdown {
+            color: #856404;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        .quick-actions {
+            margin-top: 12px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .status-indicator.green {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-indicator.yellow {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-indicator.red {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .status-dot.green {
+            background: #28a745;
+        }
+
+        .status-dot.yellow {
+            background: #ffc107;
+        }
+
+        .status-dot.red {
+            background: #dc3545;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 900px;
+            max-height: 90vh;
+            overflow-y: auto;
+            margin: 20px;
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px 15px 0 0;
+        }
+
+        .modal-header h2 {
+            font-size: 1.8em;
+            margin-bottom: 10px;
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .timeline {
+            margin-top: 30px;
+        }
+
+        .timeline-item {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            padding: 18px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #e0e0e0;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .timeline-item.completed {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+
+        .timeline-item.overdue {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+
+        .timeline-item.delayed {
+            border-left-color: #ffc107;
+            background: #fff3cd;
+        }
+
+        .timeline-item.upcoming {
+            border-left-color: #667eea;
+        }
+
+        .timeline-date {
+            font-weight: bold;
+            min-width: 120px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .timeline-date .date-text {
+            font-size: 1em;
+        }
+
+        .timeline-date .countdown-text {
+            font-size: 0.85em;
+            font-weight: normal;
+        }
+
+        .timeline-item.completed .timeline-date {
+            color: #28a745;
+        }
+
+        .timeline-item.overdue .timeline-date {
+            color: #721c24;
+        }
+
+        .timeline-item.delayed .timeline-date {
+            color: #856404;
+        }
+
+        .timeline-item.upcoming .timeline-date {
+            color: #667eea;
+        }
+
+        .timeline-content {
+            flex: 1;
+        }
+
+        .timeline-content h4 {
+            margin-bottom: 8px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .timeline-content p {
+            color: #666;
+            font-size: 0.95em;
+            margin-bottom: 10px;
+        }
+
+        .timeline-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .phase-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+
+        .phase-badge.completed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .phase-badge.overdue {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .phase-badge.delayed {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .phase-badge.upcoming {
+            background: #e7e7ff;
+            color: #667eea;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state svg {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .empty-state h3 {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+
+        .project-summary {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .summary-item {
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            border-left: 3px solid #667eea;
+        }
+
+        .summary-item strong {
+            display: block;
+            color: #667eea;
+            font-size: 0.85em;
+            margin-bottom: 5px;
+        }
+
+        .summary-item span {
+            font-size: 1.1em;
+            color: #333;
+        }
+
+        .print-header {
+            display: none;
+        }
+
+        .print-timestamp {
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+            padding: 10px 0;
+            margin-top: 10px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        /* PRINT STYLES */
+        @media print {
+            @page {
+                margin: 1.5cm;
+            }
+
+            body {
+                background: white !important;
+                padding: 0 !important;
+            }
+
+            body::before,
+            body::after {
+                content: none !important;
+            }
+
+            body > *:not(#projectDetailModal) {
+                display: none !important;
+            }
+
+            #projectDetailModal {
+                display: block !important;
+                position: static !important;
+                background: white !important;
+                overflow: visible !important;
+            }
+
+            .modal-content {
+                box-shadow: none !important;
+                border-radius: 0 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                max-height: none !important;
+                overflow: visible !important;
+                margin: 0 !important;
+            }
+
+            .modal-header {
+                background: white !important;
+                color: #333 !important;
+                border-radius: 0 !important;
+                padding: 20px 0 !important;
+                border-bottom: 2px solid #667eea !important;
+            }
+
+            .modal-body {
+                padding: 20px 0 !important;
+            }
+
+            .print-header {
+                display: block !important;
+                text-align: center;
+                padding-bottom: 20px;
+                border-bottom: 2px solid #e0e0e0;
+                margin-bottom: 20px;
+            }
+
+            .print-header h1 {
+                color: #667eea;
+                font-size: 2em;
+                margin-bottom: 10px;
+            }
+
+            .print-header p {
+                color: #666;
+                font-size: 1.1em;
+            }
+
+            .print-timestamp {
+                display: block !important;
+            }
+
+            .button-group,
+            .btn,
+            .no-print,
+            .timeline-actions {
+                display: none !important;
+            }
+
+            .timeline-item {
+                page-break-inside: avoid;
+                margin-bottom: 15px;
+            }
+
+            .project-summary {
+                page-break-inside: avoid;
+            }
+
+            .timeline-item.completed {
+                border-left-color: #28a745 !important;
+                background: #f0f0f0 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .timeline-item.overdue {
+                border-left-color: #dc3545 !important;
+                background: #ffe0e0 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .timeline-item.delayed {
+                border-left-color: #ffc107 !important;
+                background: #fffacd !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .timeline-item.upcoming {
+                border-left-color: #667eea !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📋 IMAC Services - Projekt Planner v2.6</h1>
+            <p>Reverse Planning für Neueröffnungen, Schließungen & Umbauten</p>
+        </div>
+
+        <div class="main-content">
+            <div class="action-bar">
+                <div>
+                    <button class="btn btn-primary" onclick="openNewProjectModal()">➕ Neues Projekt</button>
+                    <button class="btn btn-secondary" onclick="window.print()">🖨️ Dashboard drucken</button>
+                </div>
+                <div>
+                    <button class="btn btn-success" onclick="exportData()">💾 Daten exportieren</button>
+                    <button class="btn btn-secondary" onclick="importData()">📥 Daten importieren</button>
+                </div>
+            </div>
+
+            <!-- Filter Bar -->
+            <div class="filter-bar">
+                <input type="text" id="searchInput" placeholder="🔍 Projekt suchen..." onkeyup="filterProjects()">
+                <label for="filterStatus">Status:</label>
+                <select id="filterStatus" onchange="filterProjects()">
+                    <option value="all">Alle</option>
+                    <option value="green">✅ Im Zeitplan</option>
+                    <option value="yellow">⚡ Achtung</option>
+                    <option value="red">🔥 Kritisch</option>
+                </select>
+                <label for="sortBy">Sortieren:</label>
+                <select id="sortBy" onchange="filterProjects()">
+                    <option value="date">Nach Termin</option>
+                    <option value="name">Nach Name</option>
+                    <option value="status">Nach Status</option>
+                </select>
+                <button class="btn btn-warning btn-sm" onclick="resetCustomOrder()" id="resetOrderBtn" style="display: none;">🔄 Sortierung zurücksetzen</button>
+            </div>
+
+            <!-- Sort Info -->
+            <div id="sortInfo" class="sort-info">
+                ℹ️ Sortiert nach: Technikertag (nächster zuerst)
+            </div>
+
+            <!-- Today Box -->
+            <div id="todayBox" class="today-box" style="display: none;">
+                <h3>🔥 Heute fällig</h3>
+                <div id="todayItems" class="today-items">
+                </div>
+            </div>
+
+            <div id="dashboard" class="dashboard">
+            </div>
+
+            <div id="emptyState" class="empty-state">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+                </svg>
+                <h3>Noch keine Projekte</h3>
+                <p>Klicke auf "Neues Projekt" um zu starten</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal für neues Projekt -->
+    <div id="newProjectModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Neues Projekt erstellen</h2>
+                <p id="modalSubtitle">Gib die Projektdaten ein - die Meilensteine werden automatisch berechnet</p>
+            </div>
+            <div class="modal-body">
+                <form id="newProjectForm">
+                    <input type="hidden" id="editProjectId">
+                    <div class="form-group">
+                        <label for="projectName">Projektname / Standort *</label>
+                        <input type="text" id="projectName" required placeholder="z.B. Filiale Hamburg">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="projectType">Projekttyp *</label>
+                        <select id="projectType" required onchange="updateFormFields()">
+                            <option value="">Bitte wählen...</option>
+                            <option value="neueroffnung-voll">Neueröffnung Exp. Voll</option>
+                            <option value="neueroffnung-popup">Neueröffnung Pop-up</option>
+                            <option value="umbau-voll">Umbau (Vollumbau)</option>
+                            <option value="umbau-erweiterung">Umbau (Erweiterung)</option>
+                            <option value="umzug">Umzug</option>
+                            <option value="schliessung">Schließung</option>
+                        </select>
+                    </div>
+
+                    <div id="dynamicFields">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="notes">Notizen (optional)</label>
+                        <textarea id="notes" rows="3" placeholder="Zusätzliche Informationen..."></textarea>
+                    </div>
+
+                    <div class="button-group">
+                        <button type="submit" class="btn btn-primary" id="submitBtn">Projekt erstellen</button>
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('newProjectModal')">Abbrechen</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal für Projekt-Details -->
+    <div id="projectDetailModal" class="modal">
+        <div class="modal-content">
+            <div class="print-header">
+                <h1 id="printProjectTitle"></h1>
+                <p>IMAC Services - Projekt Timeline</p>
+                <div class="print-timestamp" id="printTimestamp"></div>
+            </div>
+            <div class="modal-header no-print">
+                <h2 id="detailProjectName">Projektdetails</h2>
+            </div>
+            <div class="modal-body">
+                <div id="projectDetailContent">
+                </div>
+                <div class="button-group no-print">
+                    <button class="btn btn-secondary" onclick="closeModal('projectDetailModal')">Schließen</button>
+                    <button class="btn btn-warning" onclick="editCurrentProject()">✏️ Bearbeiten</button>
+                    <button class="btn btn-secondary" onclick="printProject()">🖨️ Projekt drucken</button>
+                    <button class="btn btn-info" onclick="exportProjectToPDF()">📄 Als PDF exportieren</button>
+                    <button class="btn btn-primary" onclick="deleteCurrentProject()" style="background: #dc3545;">🗑️ Löschen</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let projects = [];
+        let currentProjectId = null;
+        let filteredProjects = [];
+        let customOrder = [];
+        let sortableInstance = null;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadProjects();
+            renderDashboard();
+            renderTodayBox();
+        });
+
+        function loadProjects() {
+            const stored = localStorage.getItem('imacProjects');
+            if (stored) {
+                projects = JSON.parse(stored);
+                projects.forEach(project => {
+                    if (!project.milestoneStatus) {
+                        project.milestoneStatus = {};
+                    }
+                });
+            }
+            
+            const storedOrder = localStorage.getItem('imacProjectOrder');
+            if (storedOrder) {
+                customOrder = JSON.parse(storedOrder);
+            }
+            
+            filteredProjects = [...projects];
+        }
+
+        function saveProjects() {
+            localStorage.setItem('imacProjects', JSON.stringify(projects));
+        }
+
+        function saveCustomOrder() {
+            localStorage.setItem('imacProjectOrder', JSON.stringify(customOrder));
+        }
+
+        function resetCustomOrder() {
+            customOrder = [];
+            localStorage.removeItem('imacProjectOrder');
+            document.getElementById('resetOrderBtn').style.display = 'none';
+            updateSortInfo(false);
+            filterProjects();
+        }
+
+        function updateSortInfo(isCustom) {
+            const sortInfo = document.getElementById('sortInfo');
+            const sortBy = document.getElementById('sortBy').value;
+            
+            if (isCustom) {
+                sortInfo.className = 'sort-info custom';
+                sortInfo.innerHTML = '✋ Eigene Sortierung (Drag & Drop) - Klicke "Sortierung zurücksetzen" um automatisch zu sortieren';
+                document.getElementById('resetOrderBtn').style.display = 'inline-block';
+            } else {
+                sortInfo.className = 'sort-info';
+                document.getElementById('resetOrderBtn').style.display = 'none';
+                
+                if (sortBy === 'date') {
+                    sortInfo.innerHTML = 'ℹ️ Sortiert nach: Technikertag (nächster zuerst)';
+                } else if (sortBy === 'name') {
+                    sortInfo.innerHTML = 'ℹ️ Sortiert nach: Projektname (A-Z)';
+                } else if (sortBy === 'status') {
+                    sortInfo.innerHTML = 'ℹ️ Sortiert nach: Status (kritisch → unkritisch)';
+                }
+            }
+        }
+
+        function filterProjects() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const statusFilter = document.getElementById('filterStatus').value;
+            const sortBy = document.getElementById('sortBy').value;
+
+            // Filter
+            filteredProjects = projects.filter(project => {
+                const nameMatch = project.name.toLowerCase().includes(searchTerm);
+                if (!nameMatch) return false;
+
+                if (statusFilter === 'all') return true;
+                
+                const status = calculateProjectStatus(project);
+                return status.color === statusFilter;
+            });
+
+            // Sort or use custom order
+            if (customOrder.length > 0 && searchTerm === '' && statusFilter === 'all') {
+                // Use custom order
+                filteredProjects.sort((a, b) => {
+                    const indexA = customOrder.indexOf(a.id);
+                    const indexB = customOrder.indexOf(b.id);
+                    if (indexA === -1 && indexB === -1) return 0;
+                    if (indexA === -1) return 1;
+                    if (indexB === -1) return -1;
+                    return indexA - indexB;
+                });
+                updateSortInfo(true);
+            } else {
+                // Automatic sort
+                if (sortBy === 'name') {
+                    filteredProjects.sort((a, b) => a.name.localeCompare(b.name));
+                } else if (sortBy === 'date') {
+                    filteredProjects.sort((a, b) => new Date(a.criticalDate) - new Date(b.criticalDate));
+                } else if (sortBy === 'status') {
+                    const statusA = calculateProjectStatus(a);
+                    const statusB = calculateProjectStatus(b);
+                    const order = { 'red': 0, 'yellow': 1, 'green': 2 };
+                    return order[statusA.color] - order[statusB.color];
+                }
+                updateSortInfo(false);
+            }
+
+            renderDashboard();
+        }
+
+        function initSortable() {
+            const dashboard = document.getElementById('dashboard');
+            
+            if (sortableInstance) {
+                sortableInstance.destroy();
+            }
+            
+            sortableInstance = Sortable.create(dashboard, {
+                animation: 150,
+                ghostClass: 'sortable-ghost',
+                dragClass: 'sortable-drag',
+                onEnd: function(evt) {
+                    // Save new order
+                    customOrder = [];
+                    const cards = dashboard.querySelectorAll('.project-card');
+                    cards.forEach(card => {
+                        const projectId = parseInt(card.getAttribute('data-project-id'));
+                        customOrder.push(projectId);
+                    });
+                    saveCustomOrder();
+                    updateSortInfo(true);
+                }
+            });
+        }
+
+        function renderTodayBox() {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            const todayItems = [];
+
+            projects.forEach(project => {
+                project.milestones.forEach(milestone => {
+                    const milestoneDate = new Date(milestone.date);
+                    milestoneDate.setHours(0, 0, 0, 0);
+
+                    if (milestoneDate.getTime() === today.getTime()) {
+                        const phaseKey = `phase-${milestone.phase}`;
+                        const isCompleted = project.milestoneStatus?.[phaseKey] === 'completed';
+                        
+                        if (!isCompleted) {
+                            todayItems.push({
+                                project,
+                                milestone
+                            });
+                        }
+                    }
+                });
+            });
+
+            const todayBox = document.getElementById('todayBox');
+            const todayItemsContainer = document.getElementById('todayItems');
+
+            if (todayItems.length === 0) {
+                todayBox.style.display = 'none';
+                return;
+            }
+
+            todayBox.style.display = 'block';
+            todayItemsContainer.innerHTML = '';
+
+            todayItems.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'today-item';
+                div.onclick = () => openProjectDetail(item.project.id);
+                
+                div.innerHTML = `
+                    <div class="today-item-info">
+                        <div class="today-item-project">${item.project.name}</div>
+                        <div class="today-item-phase">${item.milestone.name}</div>
+                    </div>
+                    <div class="today-item-actions">
+                        <button class="btn btn-success btn-xs" onclick="event.stopPropagation(); quickComplete(${item.project.id}, ${item.milestone.phase})">✓ Erledigt</button>
+                        <button class="btn btn-warning btn-xs" onclick="event.stopPropagation(); quickDelay(${item.project.id}, ${item.milestone.phase})">⚠️ Verzug</button>
+                    </div>
+                `;
+                
+                todayItemsContainer.appendChild(div);
+            });
+        }
+
+        function quickComplete(projectId, phase) {
+            toggleMilestoneStatus(phase, 'completed', projectId);
+        }
+
+        function quickDelay(projectId, phase) {
+            toggleMilestoneStatus(phase, 'delayed', projectId);
+        }
+
+        function renderDashboard() {
+            const dashboard = document.getElementById('dashboard');
+            const emptyState = document.getElementById('emptyState');
+
+            if (filteredProjects.length === 0) {
+                dashboard.style.display = 'none';
+                if (projects.length === 0) {
+                    emptyState.style.display = 'block';
+                } else {
+                    emptyState.innerHTML = '<h3>Keine Projekte gefunden</h3><p>Versuche einen anderen Filter</p>';
+                    emptyState.style.display = 'block';
+                }
+                return;
+            }
+
+            dashboard.style.display = 'grid';
+            emptyState.style.display = 'none';
+            dashboard.innerHTML = '';
+
+            filteredProjects.forEach(project => {
+                const status = calculateProjectStatus(project);
+                const card = createProjectCard(project, status);
+                dashboard.appendChild(card);
+            });
+
+            initSortable();
+        }
+
+        function createProjectCard(project, status) {
+            const card = document.createElement('div');
+            card.className = `project-card status-${status.color}`;
+            card.setAttribute('data-project-id', project.id);
+            card.onclick = (e) => {
+                if (e.target.tagName !== 'BUTTON') {
+                    openProjectDetail(project.id);
+                }
+            };
+
+            const typeLabels = {
+                'neueroffnung-voll': 'Neueröffnung Exp. Voll',
+                'neueroffnung-popup': 'Neueröffnung Pop-up',
+                'umbau-voll': 'Umbau (Vollumbau)',
+                'umbau-erweiterung': 'Umbau (Erweiterung)',
+                'umzug': 'Umzug',
+                'schliessung': 'Schließung'
+            };
+
+            const typeClasses = {
+                'neueroffnung-voll': 'type-neueroffnung-voll',
+                'neueroffnung-popup': 'type-neueroffnung-popup',
+                'umbau-voll': 'type-umbau-voll',
+                'umbau-erweiterung': 'type-umbau-erweiterung',
+                'umzug': 'type-umzug',
+                'schliessung': 'type-schliessung'
+            };
+
+            const nextMilestone = findNextMilestone(project);
+            let nextMilestoneHtml = '';
+
+            if (nextMilestone) {
+                const daysToNext = calculateDaysUntil(nextMilestone.date);
+                const urgencyText = daysToNext < 0 
+                    ? `⚠️ ${Math.abs(daysToNext)} Tage überfällig!`
+                    : daysToNext === 0
+                    ? '🔥 HEUTE!'
+                    : daysToNext === 1
+                    ? '🔥 MORGEN!'
+                    : `in ${daysToNext} Tagen`;
+
+                nextMilestoneHtml = `
+                    <div class="next-milestone-box">
+                        <strong>🔔 Nächster Meilenstein:</strong>
+                        <div class="milestone-name">${nextMilestone.name}</div>
+                        <div class="countdown">${urgencyText} • ${formatDate(nextMilestone.date)}</div>
+                    </div>
+                    <div class="quick-actions">
+                        <button class="btn btn-success btn-sm" onclick="event.stopPropagation(); quickComplete(${project.id}, ${nextMilestone.phase})">✓ Abhaken</button>
+                        <button class="btn btn-warning btn-sm" onclick="event.stopPropagation(); quickDelay(${project.id}, ${nextMilestone.phase})">⚠️ Verzug</button>
+                    </div>
+                `;
+            }
+
+            card.innerHTML = `
+                <div class="project-header">
+                    <div class="project-title">${project.name}</div>
+                    <span class="project-type ${typeClasses[project.type]}">${typeLabels[project.type]}</span>
+                </div>
+                <div class="project-info">
+                    <strong>Kritischer Termin:</strong> ${formatDate(project.criticalDate)}
+                </div>
+                <div class="project-info">
+                    <strong>Noch:</strong> ${status.daysRemaining} Tage
+                </div>
+                ${nextMilestoneHtml}
+                <div class="status-indicator ${status.color}">
+                    <div class="status-dot ${status.color}"></div>
+                    ${status.message}
+                </div>
+            `;
+
+            return card;
+        }
+
+        function findNextMilestone(project) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            for (let milestone of project.milestones) {
+                const phaseKey = `phase-${milestone.phase}`;
+                const manualStatus = project.milestoneStatus?.[phaseKey];
+                
+                if (manualStatus === 'completed') continue;
+
+                const milestoneDate = new Date(milestone.date);
+                milestoneDate.setHours(0, 0, 0, 0);
+
+                if (milestoneDate >= today || manualStatus === 'delayed') {
+                    return milestone;
+                }
+                
+                if (milestoneDate < today && !manualStatus) {
+                    return milestone;
+                }
+            }
+
+            return null;
+        }
+
+        function calculateDaysUntil(dateString) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const target = new Date(dateString);
+            target.setHours(0, 0, 0, 0);
+            
+            const diffTime = target - today;
+            return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        }
+
+        function calculateProjectStatus(project) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const critical = new Date(project.criticalDate);
+            critical.setHours(0, 0, 0, 0);
+            
+            const diffTime = critical - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            let color, message;
+
+            if (diffDays < 0) {
+                color = 'red';
+                message = '⚠️ Termin überschritten!';
+            } else if (diffDays <= 7) {
+                color = 'red';
+                message = '🔥 Kritisch - weniger als 1 Woche!';
+            } else if (diffDays <= 14) {
+                color = 'yellow';
+                message = '⚡ Achtung - weniger als 2 Wochen!';
+            } else if (diffDays <= 30) {
+                color = 'yellow';
+                message = '⏰ Im Zeitplan - bald fällig';
+            } else {
+                color = 'green';
+                message = '✅ Im Zeitplan';
+            }
+
+            return { color, message, daysRemaining: diffDays };
+        }
+
+        function getMilestoneStatus(project, milestone) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const milestoneDate = new Date(milestone.date);
+            milestoneDate.setHours(0, 0, 0, 0);
+
+            const phaseKey = `phase-${milestone.phase}`;
+            const manualStatus = project.milestoneStatus?.[phaseKey];
+
+            if (manualStatus === 'completed') {
+                return 'completed';
+            }
+            if (manualStatus === 'delayed') {
+                return 'delayed';
+            }
+
+            if (milestoneDate < today) {
+                return 'overdue';
+            } else if (milestoneDate.getTime() === today.getTime()) {
+                return 'upcoming';
+            } else {
+                return 'upcoming';
+            }
+        }
+
+        function toggleMilestoneStatus(phase, status, projectId = null) {
+            const targetId = projectId || currentProjectId;
+            const project = projects.find(p => p.id === targetId);
+            if (!project) return;
+
+            if (!project.milestoneStatus) {
+                project.milestoneStatus = {};
+            }
+
+            const phaseKey = `phase-${phase}`;
+            
+            if (project.milestoneStatus[phaseKey] === status) {
+                delete project.milestoneStatus[phaseKey];
+            } else {
+                project.milestoneStatus[phaseKey] = status;
+            }
+
+            saveProjects();
+            filterProjects();
+            renderTodayBox();
+            
+            if (currentProjectId === targetId) {
+                openProjectDetail(targetId);
+            }
+        }
+
+        function openNewProjectModal() {
+            document.getElementById('editProjectId').value = '';
+            document.getElementById('modalTitle').textContent = 'Neues Projekt erstellen';
+            document.getElementById('modalSubtitle').textContent = 'Gib die Projektdaten ein - die Meilensteine werden automatisch berechnet';
+            document.getElementById('submitBtn').textContent = 'Projekt erstellen';
+            document.getElementById('newProjectModal').classList.add('active');
+            document.getElementById('projectType').value = '';
+            document.getElementById('dynamicFields').innerHTML = '';
+            document.getElementById('newProjectForm').reset();
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+            if (modalId === 'newProjectModal') {
+                document.getElementById('newProjectForm').reset();
+            }
+        }
+
+        function updateFormFields() {
+            const type = document.getElementById('projectType').value;
+            const container = document.getElementById('dynamicFields');
+            
+            if (!type) {
+                container.innerHTML = '';
+                return;
+            }
+
+            let html = '';
+
+            // Neueröffnungen, Umbauten, Umzug haben gleiche Felder
+            if (type.startsWith('neueroffnung') || type.startsWith('umbau') || type === 'umzug') {
+                html = `
+                    <div class="form-group">
+                        <label for="technikertag">Technikertag (kritischer Termin) *</label>
+                        <input type="date" id="technikertag" required>
+                        <small style="color: #666; display: block; margin-top: 5px;">
+                            Projektstart wird automatisch auf T-2 Monate berechnet
+                        </small>
+                    </div>
+                    <div class="form-group">
+                        <label for="einraumtag">Einräumtag</label>
+                        <input type="date" id="einraumtag">
+                    </div>
+                    <div class="form-group">
+                        <label for="eroffnungstag">Eröffnungstag *</label>
+                        <input type="date" id="eroffnungstag" required>
+                    </div>
+                `;
+            } else if (type === 'schliessung') {
+                html = `
+                    <div class="form-group">
+                        <label for="letzterVerkaufstag">Letzter Verkaufstag</label>
+                        <input type="date" id="letzterVerkaufstag">
+                    </div>
+                    <div class="form-group">
+                        <label for="abbauTechnikertag">Abbau-Technikertag (kritischer Termin) *</label>
+                        <input type="date" id="abbauTechnikertag" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="schliesstag">Schließtag</label>
+                        <input type="date" id="schliesstag">
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html;
+        }
+
+        document.getElementById('newProjectForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const editId = document.getElementById('editProjectId').value;
+            const type = document.getElementById('projectType').value;
+            const name = document.getElementById('projectName').value;
+            const notes = document.getElementById('notes').value;
+
+            let project = {
+                id: editId ? parseInt(editId) : Date.now(),
+                name,
+                type,
+                notes,
+                createdAt: editId ? projects.find(p => p.id === parseInt(editId)).createdAt : new Date().toISOString(),
+                milestoneStatus: editId ? projects.find(p => p.id === parseInt(editId)).milestoneStatus || {} : {}
+            };
+
+            if (type.startsWith('neueroffnung') || type.startsWith('umbau') || type === 'umzug') {
+                const technikertag = document.getElementById('technikertag').value;
+                const eroffnungstag = document.getElementById('eroffnungstag').value;
+                project.criticalDate = technikertag;
+                project.technikertag = technikertag;
+                project.einraumtag = document.getElementById('einraumtag').value;
+                project.eroffnungstag = eroffnungstag;
+                project.milestones = calculateStandardMilestones(technikertag, eroffnungstag);
+            } else if (type === 'schliessung') {
+                const abbauTechnikertag = document.getElementById('abbauTechnikertag').value;
+                project.criticalDate = abbauTechnikertag;
+                project.letzterVerkaufstag = document.getElementById('letzterVerkaufstag').value;
+                project.abbauTechnikertag = abbauTechnikertag;
+                project.schliesstag = document.getElementById('schliesstag').value;
+                project.milestones = calculateSchliessungMilestones(abbauTechnikertag);
+            }
+
+            if (editId) {
+                const index = projects.findIndex(p => p.id === parseInt(editId));
+                projects[index] = project;
+            } else {
+                projects.push(project);
+            }
+
+            saveProjects();
+            filterProjects();
+            renderTodayBox();
+            closeModal('newProjectModal');
+            document.getElementById('newProjectForm').reset();
+            
+            if (editId) {
+                openProjectDetail(project.id);
+            }
+        });
+
+        function calculateStandardMilestones(technikertag, eroffnungstag) {
+            const tech = new Date(technikertag);
+            const milestones = [];
+
+            const phase1 = new Date(tech);
+            phase1.setMonth(phase1.getMonth() - 2);
+            milestones.push({
+                phase: 1,
+                name: 'Planungsphase (Expansion)',
+                date: phase1.toISOString().split('T')[0],
+                description: 'Anforderungsklärung, Datensammlung, Systemauswahl'
+            });
+
+            const phase2 = new Date(tech);
+            phase2.setDate(phase2.getDate() - 49);
+            milestones.push({
+                phase: 2,
+                name: 'Materialbestellung / Hardware',
+                date: phase2.toISOString().split('T')[0],
+                description: 'Hardware-Auswahl und Bestellung'
+            });
+
+            const phase3 = new Date(tech);
+            phase3.setDate(phase3.getDate() - 35);
+            milestones.push({
+                phase: 3,
+                name: 'Datenmanagement',
+                date: phase3.toISOString().split('T')[0],
+                description: 'Eingabe von Stammdaten und Konfiguration'
+            });
+
+            const phase4 = new Date(tech);
+            phase4.setDate(phase4.getDate() - 28);
+            milestones.push({
+                phase: 4,
+                name: 'Installation & Einrichtung',
+                date: phase4.toISOString().split('T')[0],
+                description: 'Testaufbau im Labor Norderstedt'
+            });
+
+            const phase5 = new Date(tech);
+            phase5.setDate(phase5.getDate() - 14);
+            milestones.push({
+                phase: 5,
+                name: 'Datenabgleich und Validierung',
+                date: phase5.toISOString().split('T')[0],
+                description: 'Datenbereinigung und Korrekturen'
+            });
+
+            const phase6 = new Date(tech);
+            phase6.setDate(phase6.getDate() - 3);
+            milestones.push({
+                phase: 6,
+                name: 'Verpackung & Versand',
+                date: phase6.toISOString().split('T')[0],
+                description: '⚠️ KRITISCH: Materialversand muss erfolgen!'
+            });
+
+            milestones.push({
+                phase: 7,
+                name: 'Abnahmetag Filiale / Technikertag',
+                date: technikertag,
+                description: '🎯 KRITISCHER TERMIN: Abschlussprüfung aller Systeme'
+            });
+
+            if (eroffnungstag) {
+                milestones.push({
+                    phase: 8,
+                    name: 'Eröffnungstag',
+                    date: eroffnungstag,
+                    description: '🎉 Offizielle Eröffnung der Filiale'
+                });
+            }
+
+            const phase9 = new Date(tech);
+            phase9.setDate(phase9.getDate() + 28);
+            milestones.push({
+                phase: 9,
+                name: 'Nachverfolgung (KVP)',
+                date: phase9.toISOString().split('T')[0],
+                description: 'Support-Tracking und Feedback-Sammlung (4 Wochen)'
+            });
+
+            return milestones;
+        }
+
+        function calculateSchliessungMilestones(abbauTechnikertag) {
+            const abbau = new Date(abbauTechnikertag);
+            const milestones = [];
+
+            const kuendigungen = new Date(abbau);
+            kuendigungen.setDate(kuendigungen.getDate() - 56);
+            milestones.push({
+                phase: 1,
+                name: 'Kündigungen einleiten',
+                date: kuendigungen.toISOString().split('T')[0],
+                description: 'Telekommunikation, Verträge, Dienstleistungen kündigen'
+            });
+
+            const material = new Date(abbau);
+            material.setDate(material.getDate() - 14);
+            milestones.push({
+                phase: 2,
+                name: 'Abbau-Material vorbereiten',
+                date: material.toISOString().split('T')[0],
+                description: 'Euroboxen, Kartons, Polster bereitstellen'
+            });
+
+            const versand = new Date(abbau);
+            versand.setDate(versand.getDate() - 3);
+            milestones.push({
+                phase: 3,
+                name: 'Material-Versand',
+                date: versand.toISOString().split('T')[0],
+                description: '⚠️ KRITISCH: Versand Euroboxen, Briefing, Checkliste'
+            });
+
+            milestones.push({
+                phase: 4,
+                name: 'Abbau-Technikertag',
+                date: abbauTechnikertag,
+                description: '🎯 KRITISCHER TERMIN: Hardware-Abbau und Rücktransport'
+            });
+
+            const ruecknahme = new Date(abbau);
+            ruecknahme.setDate(ruecknahme.getDate() + 7);
+            milestones.push({
+                phase: 5,
+                name: 'Rücknahme & Inventur',
+                date: ruecknahme.toISOString().split('T')[0],
+                description: 'Hardware-Inventur und Lagereingang prüfen'
+            });
+
+            return milestones;
+        }
+
+        function openProjectDetail(projectId) {
+            const project = projects.find(p => p.id === projectId);
+            if (!project) return;
+
+            currentProjectId = projectId;
+            
+            const modal = document.getElementById('projectDetailModal');
+            const content = document.getElementById('projectDetailContent');
+            
+            document.getElementById('detailProjectName').textContent = project.name;
+            document.getElementById('printProjectTitle').textContent = project.name;
+            
+            const now = new Date();
+            const timestamp = `Stand: ${formatDateFull(now)}, ${now.toLocaleTimeString('de-DE', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            })} Uhr`;
+            document.getElementById('printTimestamp').textContent = timestamp;
+
+            const typeLabels = {
+                'neueroffnung-voll': 'Neueröffnung Exp. Voll',
+                'neueroffnung-popup': 'Neueröffnung Pop-up',
+                'umbau-voll': 'Umbau (Vollumbau)',
+                'umbau-erweiterung': 'Umbau (Erweiterung)',
+                'umzug': 'Umzug',
+                'schliessung': 'Schließung'
+            };
+
+            const completedCount = project.milestones.filter(m => {
+                const phaseKey = `phase-${m.phase}`;
+                return project.milestoneStatus?.[phaseKey] === 'completed';
+            }).length;
+            const totalCount = project.milestones.length;
+            const progressPercentage = Math.round((completedCount / totalCount) * 100);
+
+            let summaryItems = `
+                <div class="summary-item">
+                    <strong>Projekttyp</strong>
+                    <span>${typeLabels[project.type]}</span>
+                </div>
+                <div class="summary-item">
+                    <strong>Kritischer Termin</strong>
+                    <span>${formatDate(project.criticalDate)}</span>
+                </div>
+            `;
+
+            if ((project.type.startsWith('neueroffnung') || project.type.startsWith('umbau') || project.type === 'umzug') && project.eroffnungstag) {
+                summaryItems += `
+                    <div class="summary-item">
+                        <strong>Eröffnungstag</strong>
+                        <span>${formatDate(project.eroffnungstag)}</span>
+                    </div>
+                `;
+            }
+
+            summaryItems += `
+                <div class="summary-item">
+                    <strong>Fortschritt</strong>
+                    <span>${completedCount}/${totalCount} Phasen (${progressPercentage}%)</span>
+                </div>
+                <div class="summary-item">
+                    <strong>Erstellt am</strong>
+                    <span>${formatDate(project.createdAt.split('T')[0])}</span>
+                </div>
+            `;
+
+            let html = `
+                <div class="project-summary">
+                    <h3 style="margin-bottom: 15px; color: #667eea;">📊 Projekt-Übersicht</h3>
+                    <div class="print-timestamp no-print" style="margin-bottom: 10px; font-size: 0.9em; color: #666;">${timestamp}</div>
+                    <div class="summary-grid">
+                        ${summaryItems}
+                    </div>
+                    ${project.notes ? `<div style="margin-top: 15px; padding: 12px; background: white; border-radius: 8px;"><strong>Notizen:</strong> ${project.notes}</div>` : ''}
+                </div>
+
+                <div class="timeline">
+                    <h3 style="margin-bottom: 20px; color: #667eea;">📅 Timeline & Meilensteine</h3>
+            `;
+
+            project.milestones.forEach(milestone => {
+                const status = getMilestoneStatus(project, milestone);
+                
+                let badgeClass = '';
+                let badgeText = '';
+                
+                if (status === 'completed') {
+                    badgeClass = 'completed';
+                    badgeText = '✅ Erledigt';
+                } else if (status === 'delayed') {
+                    badgeClass = 'delayed';
+                    badgeText = '⚠️ Verzug';
+                } else if (status === 'overdue') {
+                    badgeClass = 'overdue';
+                    badgeText = '🔴 Überfällig';
+                } else {
+                    badgeClass = 'upcoming';
+                    badgeText = '📅 Geplant';
+                }
+
+                const daysUntil = calculateDaysUntil(milestone.date);
+                let countdownText = '';
+                
+                if (daysUntil < 0) {
+                    countdownText = `${Math.abs(daysUntil)} Tage her`;
+                } else if (daysUntil === 0) {
+                    countdownText = 'Heute';
+                } else if (daysUntil === 1) {
+                    countdownText = 'Morgen';
+                } else {
+                    countdownText = `in ${daysUntil} Tagen`;
+                }
+
+                const phaseKey = `phase-${milestone.phase}`;
+                const manualStatus = project.milestoneStatus?.[phaseKey];
+                
+                html += `
+                    <div class="timeline-item ${status}">
+                        <div class="timeline-date">
+                            <span class="date-text">${formatDate(milestone.date)}</span>
+                            <span class="countdown-text">${countdownText}</span>
+                        </div>
+                        <div class="timeline-content">
+                            <h4>
+                                ${milestone.name}
+                                <span class="phase-badge ${badgeClass}">${badgeText}</span>
+                            </h4>
+                            <p>${milestone.description}</p>
+                            <div class="timeline-actions">
+                                <button class="btn btn-success btn-sm" onclick="event.stopPropagation(); toggleMilestoneStatus(${milestone.phase}, 'completed')" 
+                                    ${manualStatus === 'completed' ? 'style="opacity: 0.6;"' : ''}>
+                                    ${manualStatus === 'completed' ? '✅ Erledigt' : '✓ Abhaken'}
+                                </button>
+                                <button class="btn btn-warning btn-sm" onclick="event.stopPropagation(); toggleMilestoneStatus(${milestone.phase}, 'delayed')"
+                                    ${manualStatus === 'delayed' ? 'style="opacity: 0.6;"' : ''}>
+                                    ${manualStatus === 'delayed' ? '⚠️ Im Verzug' : '⚠️ Verzug'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `</div>`;
+
+            content.innerHTML = html;
+            modal.classList.add('active');
+        }
+
+        function editCurrentProject() {
+            const project = projects.find(p => p.id === currentProjectId);
+            if (!project) return;
+
+            closeModal('projectDetailModal');
+
+            document.getElementById('editProjectId').value = project.id;
+            document.getElementById('modalTitle').textContent = 'Projekt bearbeiten';
+            document.getElementById('modalSubtitle').textContent = 'Passe die Termine an - Meilensteine werden automatisch neu berechnet';
+            document.getElementById('submitBtn').textContent = 'Änderungen speichern';
+            
+            document.getElementById('projectName').value = project.name;
+            document.getElementById('projectType').value = project.type;
+            document.getElementById('notes').value = project.notes || '';
+
+            updateFormFields();
+
+            setTimeout(() => {
+                if (project.type.startsWith('neueroffnung') || project.type.startsWith('umbau') || project.type === 'umzug') {
+                    document.getElementById('technikertag').value = project.technikertag;
+                    if (project.einraumtag) document.getElementById('einraumtag').value = project.einraumtag;
+                    if (project.eroffnungstag) document.getElementById('eroffnungstag').value = project.eroffnungstag;
+                } else if (project.type === 'schliessung') {
+                    if (project.letzterVerkaufstag) document.getElementById('letzterVerkaufstag').value = project.letzterVerkaufstag;
+                    document.getElementById('abbauTechnikertag').value = project.abbauTechnikertag;
+                    if (project.schliesstag) document.getElementById('schliesstag').value = project.schliesstag;
+                }
+            }, 100);
+
+            document.getElementById('newProjectModal').classList.add('active');
+        }
+
+        function deleteCurrentProject() {
+            if (!currentProjectId) return;
+            
+            if (confirm('Möchtest du dieses Projekt wirklich löschen?')) {
+                projects = projects.filter(p => p.id !== currentProjectId);
+                
+                // Remove from custom order
+                const index = customOrder.indexOf(currentProjectId);
+                if (index > -1) {
+                    customOrder.splice(index, 1);
+                    saveCustomOrder();
+                }
+                
+                saveProjects();
+                filterProjects();
+                renderTodayBox();
+                closeModal('projectDetailModal');
+                currentProjectId = null;
+            }
+        }
+
+        function printProject() {
+            window.print();
+        }
+
+        function exportProjectToPDF() {
+            const project = projects.find(p => p.id === currentProjectId);
+            if (!project) return;
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            const typeLabels = {
+                'neueroffnung-voll': 'Neueröffnung Exp. Voll',
+                'neueroffnung-popup': 'Neueröffnung Pop-up',
+                'umbau-voll': 'Umbau (Vollumbau)',
+                'umbau-erweiterung': 'Umbau (Erweiterung)',
+                'umzug': 'Umzug',
+                'schliessung': 'Schließung'
+            };
+
+            doc.setFontSize(20);
+            doc.setTextColor(102, 126, 234);
+            doc.text(project.name, 105, 20, { align: 'center' });
+
+            doc.setFontSize(12);
+            doc.setTextColor(100, 100, 100);
+            doc.text('IMAC Services - Projekt Timeline', 105, 28, { align: 'center' });
+
+            const now = new Date();
+            const timestamp = `Stand: ${formatDateFull(now)} ${now.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr`;
+            doc.setFontSize(9);
+            doc.text(timestamp, 105, 33, { align: 'center' });
+
+            doc.setDrawColor(224, 224, 224);
+            doc.line(20, 38, 190, 38);
+
+            let yPos = 48;
+            doc.setFontSize(14);
+            doc.setTextColor(102, 126, 234);
+            doc.text('Projekt-Übersicht', 20, yPos);
+
+            yPos += 10;
+            doc.setFontSize(10);
+            doc.setTextColor(50, 50, 50);
+            
+            const completedCount = project.milestones.filter(m => {
+                const phaseKey = `phase-${m.phase}`;
+                return project.milestoneStatus?.[phaseKey] === 'completed';
+            }).length;
+            const totalCount = project.milestones.length;
+            const progressPercentage = Math.round((completedCount / totalCount) * 100);
+
+            doc.text(`Projekttyp: ${typeLabels[project.type]}`, 20, yPos);
+            yPos += 7;
+            doc.text(`Kritischer Termin: ${formatDate(project.criticalDate)}`, 20, yPos);
+            yPos += 7;
+            
+            if ((project.type.startsWith('neueroffnung') || project.type.startsWith('umbau') || project.type === 'umzug') && project.eroffnungstag) {
+                doc.text(`Eröffnungstag: ${formatDate(project.eroffnungstag)}`, 20, yPos);
+                yPos += 7;
+            }
+            
+            doc.text(`Fortschritt: ${completedCount}/${totalCount} Phasen (${progressPercentage}%)`, 20, yPos);
+            yPos += 7;
+            doc.text(`Erstellt am: ${formatDate(project.createdAt.split('T')[0])}`, 20, yPos);
+
+            if (project.notes) {
+                yPos += 10;
+                doc.setFontSize(9);
+                doc.setTextColor(80, 80, 80);
+                const splitNotes = doc.splitTextToSize(`Notizen: ${project.notes}`, 170);
+                doc.text(splitNotes, 20, yPos);
+                yPos += splitNotes.length * 5;
+            }
+
+            yPos += 15;
+            doc.setFontSize(14);
+            doc.setTextColor(102, 126, 234);
+            doc.text('Timeline & Meilensteine', 20, yPos);
+            yPos += 10;
+
+            project.milestones.forEach((milestone) => {
+                const status = getMilestoneStatus(project, milestone);
+
+                if (yPos > 270) {
+                    doc.addPage();
+                    yPos = 20;
+                }
+
+                let badgeText = '';
+                let statusColor = [100, 100, 100];
+
+                if (status === 'completed') {
+                    badgeText = 'Erledigt';
+                    statusColor = [40, 167, 69];
+                } else if (status === 'delayed') {
+                    badgeText = 'Verzug';
+                    statusColor = [255, 193, 7];
+                } else if (status === 'overdue') {
+                    badgeText = 'Überfällig';
+                    statusColor = [220, 53, 69];
+                } else {
+                    badgeText = 'Geplant';
+                    statusColor = [102, 126, 234];
+                }
+
+                const daysUntil = calculateDaysUntil(milestone.date);
+                let countdownText = '';
+                
+                if (daysUntil < 0) {
+                    countdownText = `${Math.abs(daysUntil)} Tage her`;
+                } else if (daysUntil === 0) {
+                    countdownText = 'Heute';
+                } else if (daysUntil === 1) {
+                    countdownText = 'Morgen';
+                } else {
+                    countdownText = `in ${daysUntil} Tagen`;
+                }
+
+                doc.setDrawColor(...statusColor);
+                doc.setLineWidth(0.5);
+                doc.line(20, yPos - 3, 20, yPos + 15);
+
+                doc.setFontSize(9);
+                doc.setTextColor(...statusColor);
+                doc.text(formatDate(milestone.date), 25, yPos);
+                doc.setFontSize(8);
+                doc.setTextColor(120, 120, 120);
+                doc.text(countdownText, 25, yPos + 5);
+
+                doc.setFontSize(11);
+                doc.setTextColor(50, 50, 50);
+                doc.text(milestone.name, 70, yPos);
+
+                doc.setFontSize(8);
+                doc.setTextColor(...statusColor);
+                doc.text(badgeText, 70, yPos + 5);
+
+                doc.setFontSize(9);
+                doc.setTextColor(100, 100, 100);
+                const splitDesc = doc.splitTextToSize(milestone.description, 115);
+                doc.text(splitDesc, 70, yPos + 10);
+
+                yPos += 20 + (splitDesc.length * 4);
+            });
+
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setTextColor(150, 150, 150);
+                doc.text(`Seite ${i} von ${pageCount}`, 105, 290, { align: 'center' });
+                doc.text(`Erstellt: ${formatDateFull(now)}`, 190, 290, { align: 'right' });
+            }
+
+            const fileName = `Projekt-${project.name.replace(/[^a-z0-9]/gi, '_')}-${new Date().toISOString().split('T')[0]}.pdf`;
+            doc.save(fileName);
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('de-DE', { 
+                day: '2-digit', 
+                month: '2-digit', 
+                year: 'numeric' 
+            });
+        }
+
+        function formatDateFull(date) {
+            return date.toLocaleDateString('de-DE', { 
+                day: '2-digit', 
+                month: '2-digit', 
+                year: 'numeric' 
+            });
+        }
+
+        function exportData() {
+            const dataStr = JSON.stringify(projects, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `imac-projekte-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importData() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const imported = JSON.parse(event.target.result);
+                        if (Array.isArray(imported)) {
+                            if (confirm(`${imported.length} Projekte gefunden. Bestehende Daten überschreiben?`)) {
+                                projects = imported;
+                                saveProjects();
+                                filterProjects();
+                                renderTodayBox();
+                                alert('Daten erfolgreich importiert!');
+                            }
+                        }
+                    } catch (error) {
+                        alert('Fehler beim Import: Ungültige Datei');
+                    }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        }
+
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeModal(modal.id);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
